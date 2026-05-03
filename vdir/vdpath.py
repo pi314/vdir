@@ -35,7 +35,7 @@ class VDGlob:
 
     def glob(self):
         ret = glob.glob(self.txt, recursive=True)
-        return natsorted(ret)
+        return [VDPath(p) for p in natsorted(ret)]
 
 
 class VDPath:
@@ -67,7 +67,10 @@ class VDPath:
             return self.path == other.path
         if isinstance(other, VDGlob):
             return False
-        return self.path == Path(other).expanduser()
+        try:
+            return self.path == Path(other).expanduser()
+        except TypeError:
+            return False
 
     def __lt__(self, other):
         if isinstance(other, (VDPath, VDLink)):

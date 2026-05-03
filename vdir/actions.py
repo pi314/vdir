@@ -54,6 +54,9 @@ class TicketPool:
             if tag not in self.by_path[path]:
                 self.by_path[path][tag] = []
 
+            if tag == 'nop' and self.by_path[path][tag]:
+                continue
+
             self.by_path[path][tag].append(ticket)
             ticket.participants.append(path)
 

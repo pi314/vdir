@@ -75,16 +75,13 @@ class Inventory:
     def clear(self):
         self.content.clear()
 
-    def append(self, thing, iii=None, mark=None):
+    def append(self, thing):
         if thing is None:
             if self.content and self.content[-1] is not None:
                 self.content.append(None)
 
         elif isinstance(thing, (TrackingItem, VDComment)):
             self.content.append(thing)
-
-        elif iii is not None:
-            self.content.append(TrackingItem(int(iii, 10), thing, mark=mark))
 
         elif isinstance(thing, (VDPath, VDGlob, VDLink, VDShCmd, VDInvSortCmd)):
             self.content.append(thing)
@@ -102,20 +99,20 @@ class Inventory:
                         if item is not None and not isinstance(item, VDComment)]
         self.content.sort(key=cmd.cast)
 
-    def contains(self, path):
-        if isinstance(path, VDPath):
-            vdpath = path
-        elif isinstance(path, VDLink):
-            vdpath = path.lnk
+    def contains(self, thing):
+        if isinstance(thing, VDPath):
+            vdpath = thing
+        elif isinstance(thing, VDLink):
+            vdpath = thing.lnk
         else:
-            vdpath = VDPath(path)
+            return False
 
         for item in self.content:
             if not isinstance(item, TrackingItem) or item.mark != '.':
                 continue
-
             if item.path == vdpath:
                 return True
+
         return False
 
     def freeze(self):

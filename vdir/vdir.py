@@ -107,6 +107,7 @@ def hint_banner():
 # -----------------------------------------------------------------------------
 
 def step_vim_edit_inventory(base, inventory):
+    logger.debug()
     logger.debug(FUNC_LINE())
 
     if not inventory:
@@ -183,6 +184,7 @@ def step_vim_edit_inventory(base, inventory):
 
                 elif rec.fullmatch(r'([#+*@]?) *(\d+)\t+(.*)'):
                     mark, iii, path = rec.groups()
+                    iii = int(iii, 10)
 
                     if '->' in path:
                         a, b = path.split('->')
@@ -192,7 +194,7 @@ def step_vim_edit_inventory(base, inventory):
                     else:
                         path = VDPath(path)
 
-                    new.append(path, iii=iii, mark=mark)
+                    new.append(TrackingItem(iii, path, mark))
 
                 elif rec.fullmatch(r'\$ +(.+)'):
                     new.append(VDShCmd(rec.group(1)))
@@ -374,7 +376,8 @@ def step_construct_raw_actions(base, new, delta_by_iii):
         new_iii_order = [getattr(item, 'iii', 0) for item in new]
 
         if sorted(base_iii_order) != sorted(new_iii_order) or base_iii_order != new_iii_order:
-            return (step_vim_edit_inventory, new, new)
+            yn = prompt('Next round', ['yes'], yes='yes')
+            return (step_expand_inventory, new, [], yn)
 
         else:
             logger.info('No change')
@@ -413,7 +416,7 @@ def step_merge_actions(base, new, ticket_pool):
 
         elif (len(actions.get('nop', [])) + len(actions.get('to', []))) > 1:
             logger.errorq('Conflict: override tracking item')
-            for ticket in actions['to']:
+            for ticket in actions.get('nop', []) + actions.get('to', []):
                 logger.errorq(f'From: {ticket.action.src}')
             logger.errorq(f'To  : {path}')
 
@@ -609,7 +612,7 @@ def step_expand_inventory(new, action_list, yn):
     logger.debug(magenta('==== inventory ===='))
     for item in new:
         logger.debug(item)
-    logger.debug(magenta('==== ========= ===='))
+    logger.debug(magenta('==================='))
 
     has_inv_cmd = False
     for action in action_list:
@@ -618,10 +621,7 @@ def step_expand_inventory(new, action_list, yn):
 
     newnew = Inventory()
     for item in new:
-        if item is None:
-            newnew.append(None)
-
-        elif isinstance(item, VDComment):
+        if item is None or isinstance(item, VDComment):
             newnew.append(item)
 
         elif isinstance(item, TrackingItem):
@@ -638,7 +638,8 @@ def step_expand_inventory(new, action_list, yn):
                     newnew.append(TrackingItem(None, item.path.ref))
 
             else:
-                newnew.append(TrackingItem(None, item.path))
+                if not newnew.contains(item.path):
+                    newnew.append(TrackingItem(None, item.path))
 
         elif isinstance(item, (VDPath, VDLink)):
             if not new.contains(item) and not newnew.contains(item):
@@ -667,6 +668,11 @@ def step_expand_inventory(new, action_list, yn):
             newnew.append(VDComment(':sort ' + item.text))
 
     newnew.freeze()
+
+    logger.debug(magenta('==== inventory ===='))
+    for item in newnew:
+        logger.debug(item)
+    logger.debug(magenta('==================='))
 
     logger.debug('has_inv_cmd', has_inv_cmd)
     if yn.selected == '' and has_inv_cmd == 0:
