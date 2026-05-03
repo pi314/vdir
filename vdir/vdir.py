@@ -690,6 +690,11 @@ def edit_vd_vimrc():
     logger.debug()
     logger.debug(FUNC_LINE())
 
+    # vdir --vimrc | something
+    if not sys.stdout.isatty() or not sys.stderr.isatty():
+        print(VDIR_USER_VIMRC_PATH)
+        sys.exit(0 if VDIR_USER_VIMRC_PATH.exists() else 1)
+
     if VDIR_USER_VIMRC_PATH.exists() and not VDIR_USER_VIMRC_PATH.is_file():
         logger.error(VDIR_USER_VIMRC_PATH, 'exists and it\'s not a file')
         return 1
@@ -770,12 +775,12 @@ def main():
 
     args = parser.parse_args()
 
+    if args.vimrc:
+        sys.exit(edit_vd_vimrc())
+
     if not sys.stdout.isatty() or not sys.stderr.isatty():
         logger.error('Both stdout and stderr must be tty')
         sys.exit(1)
-
-    if args.vimrc:
-        sys.exit(edit_vd_vimrc())
 
     options.debug = args.debug
     logger.debug(FUNC_LINE(), options)
