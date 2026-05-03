@@ -1,0 +1,66 @@
+let g:vdir_disable_default_options = 0
+let g:vdir_disable_all_mappings = 0
+let g:vdir_disable_default_mappings = 0
+let g:vdir_disable_syntax_match = 0
+let g:vdir_disable_syntax_highlight = 0
+let g:vdir_ignore_ls_colors = 0
+
+
+if g:vdir_disable_default_mappings
+    " Cursor movement default binding
+    nmap <buffer> ^ <Plug>(VDKey[^])
+    nmap <buffer> H <Plug>(VDKey[H])
+    nmap <buffer> M <Plug>(VDKey[M])
+    nmap <buffer> L <Plug>(VDKey[L])
+    nmap <buffer> G <Plug>(VDKey[G])
+    nmap <buffer> <C-u> <Plug>(VDKey[c-u])
+    nmap <buffer> <C-d> <Plug>(VDKey[c-d])
+    nmap <buffer> <C-b> <Plug>(VDKey[c-b])
+    nmap <buffer> <C-f> <Plug>(VDKey[c-f])
+
+    xmap <buffer> ^ <Plug>(VDKey[^])
+    xmap <buffer> H <Plug>(VDKey[H])
+    xmap <buffer> M <Plug>(VDKey[M])
+    xmap <buffer> L <Plug>(VDKey[L])
+    xmap <buffer> G <Plug>(VDKey[G])
+    xmap <buffer> <C-u> <Plug>(VDKey[c-u])
+    xmap <buffer> <C-d> <Plug>(VDKey[c-d])
+    xmap <buffer> <C-b> <Plug>(VDKey[c-b])
+    xmap <buffer> <C-f> <Plug>(VDKey[c-f])
+
+    " Item editing default binding
+    nmap <buffer> cc <Plug>(VDEditWholeLine)
+    nmap <buffer> S  <Plug>(VDEditWholeLine)
+    nmap <buffer> I  <Plug>(VDEditAtStartOfLine)
+
+    " Toggle @ mark
+    nmap <buffer> @@ <Plug>(VDToggleResolveMark)
+    xmap <buffer> @ <Plug>(VDToggleResolveMark)
+
+    " Toggle + and * mark
+    nmap <buffer> ++ <Plug>(VDToggleExpandMark)
+    xmap <buffer> + <Plug>(VDToggleExpandMark)
+
+    " Toggle # mark
+    nmap <buffer> ## <Plug>(VDToggleUntrackMark)
+    xmap <buffer> # <Plug>(VDToggleUntrackMark)
+endif
+
+
+if g:vdir_disable_syntax_highlight
+    highlight link VDComment Comment
+    highlight link VDIII Number
+
+    highlight VDDirPath     cterm=bold ctermfg=6 ctermbg=none
+
+    highlight VDExecFilePath    cterm=bold ctermfg=2 ctermbg=none
+
+    highlight VDLinkPath        cterm=bold ctermfg=5 ctermbg=none
+    highlight VDDeadLinkPath    cterm=bold ctermfg=5 ctermbg=none
+    highlight VDDeadLinkTarget  ctermfg=9
+
+    highlight VDFifoPath    cterm=bold ctermfg=3 ctermbg=none
+    highlight VDFifoSymbol  ctermfg=3
+
+    highlight VDErrorFilePath   ctermfg=black ctermbg=red
+endif
