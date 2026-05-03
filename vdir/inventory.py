@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from .utils import *
-from .errors import *
 from .vdpath import *
 
 
