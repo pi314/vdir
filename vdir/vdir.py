@@ -37,7 +37,7 @@ options = argparse.Namespace(
         debug=False,
         )
 
-VDIR_DEFAULT_VIMRC_PATH = Path(__file__).parent / 'vimrc'
+VDIR_DEFAULT_VIMRC_PATH = Path(__file__).parent / 'vimrc.vdir'
 VDIR_USER_VIMRC_BLUEPRINT_PATH = Path(__file__).parent / 'vimrc.user'
 VDIR_USER_VIMRC_PATH = Path.home() / '.config' / 'vdir' / 'vdir.vimrc'
 
