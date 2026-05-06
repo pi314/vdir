@@ -417,6 +417,12 @@ def step_merge_actions(base, new, ticket_pool):
                 logger.errorq(f'From: {ticket.action.src}')
             logger.errorq(f'To  : {path}')
 
+        elif actions.get('to', []) and not actions.get('from', []) and path.exists():
+            logger.errorq('Conflict: has risk override existing file')
+            for ticket in actions['to']:
+                logger.errorq(f'From: {ticket.action.src}')
+            logger.errorq(f'To: {path}')
+
         elif (len(actions.get('nop', [])) + len(actions.get('to', []))) > 1:
             logger.errorq('Conflict: override tracking item')
             for ticket in actions.get('nop', []) + actions.get('to', []):
