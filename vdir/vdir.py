@@ -407,9 +407,9 @@ def step_merge_actions(base, new, ticket_pool):
     # dump
     logger.debug(magenta('==== before merge ===='))
     dump()
-    logger.debug(magenta('-------------------------'))
 
-    # Pass 1, conflict check
+    # Conflict check
+    logger.debug(magenta('---- Conflict check -----'))
     for path, actions in ticket_pool.by_path.items():
         if len(actions.get('to', [])) > 1:
             logger.errorq('Conflict: multiple copy/move into single destination')
@@ -433,7 +433,8 @@ def step_merge_actions(base, new, ticket_pool):
         logger.errorflush()
         return (step_ask_fix_it, base, new)
 
-    # Pass 2, cancel DeleteAction if TrackAction exists
+    # Cancel DeleteAction if TrackAction exists
+    logger.debug(magenta('---- Reduce DeleteAction ----'))
     for path, actions in ticket_pool.by_path.items():
         if 'delete' in actions and not path.exists():
             for ticket in actions['delete']:
@@ -442,9 +443,9 @@ def step_merge_actions(base, new, ticket_pool):
             for ticket in actions['delete']:
                 ticket.action = NoAction(ticket.action.src)
     dump()
-    logger.debug(magenta('---- pass 2 fin ---------'))
 
-    # Pass 3, transform (CopyAction && !NoAction) into RenameAction
+    # Transform (CopyAction && !NoAction) into RenameAction
+    logger.debug(magenta('---- Construct RenameAction ----'))
     for path, actions in ticket_pool.by_path.items():
         if 'from' in actions and 'nop' not in actions:
             for ticket in actions['from']:
@@ -452,13 +453,17 @@ def step_merge_actions(base, new, ticket_pool):
                     ticket.action = RenameAction(ticket.action.src, ticket.action.dst)
                     break
     dump()
-    logger.debug(magenta('---- pass 3 fin ---------'))
 
-    # Pass 4, fuse contiguous RenameActions into Rotate RenameAction
+    # Check src/dst isdir/isfile/isfifo/islink consistency
+    # logger.debug(magenta('---- Check src/dst type consistency ----'))
+    # dump()
+
+    # Fuse contiguous RenameActions into Rotate RenameAction
+    logger.debug(magenta('---- Fuse RenameAction ----'))
     has_fuse = True
     while has_fuse:
         logger.debug()
-        logger.debug('loop')
+        logger.debug('iteration')
         has_fuse = False
         for ticket in ticket_pool.ticket_list:
             if not isinstance(ticket.action, RenameAction):
