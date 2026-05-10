@@ -455,8 +455,16 @@ def step_merge_actions(base, new, ticket_pool):
     dump()
 
     # Check src/dst isdir/isfile/isfifo/islink consistency
-    # logger.debug(magenta('---- Check src/dst type consistency ----'))
-    # dump()
+    logger.debug(magenta('---- Check src/dst type consistency ----'))
+    def file_type (f):
+        return (f.isdir, f.isfile, f.isfifo)
+    for ticket in ticket_pool:
+        if isinstance(ticket.action, (CopyAction, RenameAction)):
+            if file_type(ticket.action.src) != file_type(ticket.action.dst):
+                logger.errorq('Conflict: file type changed')
+                logger.errorq('From:', ticket.action.src)
+                logger.errorq('To:  ', ticket.action.dst)
+    dump()
 
     # Fuse contiguous RenameActions into Rotate RenameAction
     logger.debug(magenta('---- Fuse RenameAction ----'))
