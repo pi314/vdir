@@ -265,7 +265,6 @@ def step_collect_inventory_delta(base, new):
         delta_by_iii[item.iii].append(item)
 
     if logger.has_error():
-        logger.errorflush()
         return (step_ask_fix_it, base, new)
 
     return (step_construct_raw_actions, base, new, delta_by_iii)
@@ -430,7 +429,6 @@ def step_merge_actions(base, new, ticket_pool):
             logger.errorq(f'To  : {path}')
 
     if logger.has_error():
-        logger.errorflush()
         return (step_ask_fix_it, base, new)
 
     # Cancel DeleteAction if TrackAction exists
@@ -461,6 +459,7 @@ def step_merge_actions(base, new, ticket_pool):
     for ticket in ticket_pool:
         if isinstance(ticket.action, (CopyAction, RenameAction)):
             if file_type(ticket.action.src) != file_type(ticket.action.dst):
+                logger.errorq()
                 logger.errorq('Conflict: file type changed')
                 logger.errorq('From:', ticket.action.src)
                 logger.errorq('To:  ', ticket.action.dst)
@@ -509,7 +508,6 @@ def step_merge_actions(base, new, ticket_pool):
     logger.debug(magenta('==== after merge ===='))
 
     if logger.has_error():
-        logger.errorflush()
         return (step_ask_fix_it, base, new)
 
     return (step_confirm_action_list, base, new, ticket_pool)
@@ -522,8 +520,8 @@ def step_ask_fix_it(base, new):
     logger.errorflush()
     logger.errorclear()
 
-    user_confirm = prompt('Fix it?', ['edit', 'redo', 'quit'],
-            allow_empty_input=False)
+    user_confirm = prompt('Fix it?', ['edit', 'redo', 'no', 'quit'],
+            accept_empty=False)
 
     if user_confirm == 'edit':
         return (step_vim_edit_inventory, base, new)
@@ -877,9 +875,9 @@ def main():
             prev_call = (func, *args)
             next_call = func(*args)
 
-            if logger.has_error():
-                logger.errorflush()
-                sys.exit(1)
+            # if logger.has_error():
+            #     logger.errorflush()
+            #     sys.exit(1)
 
         except TypeError as e:
             logger.errorq(e)
