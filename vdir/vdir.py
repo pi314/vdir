@@ -454,15 +454,23 @@ def step_merge_actions(base, new, ticket_pool):
 
     # Check src/dst isdir/isfile/isfifo/islink consistency
     logger.debug(magenta('---- Check src/dst type consistency ----'))
-    def file_type (f):
-        return (f.isdir, f.isfile, f.isfifo)
+    def file_type(f):
+        if f.isdir:
+            return ls_colors('di')(' (dir)')
+        elif f.isfile:
+            return '(file)'
+        elif f.islink:
+            return ls_colors('ln')('(link)')
+        elif f.isfifo:
+            return ls_colors('pi')('(fifo)')
+        return red('what')
     for ticket in ticket_pool:
         if isinstance(ticket.action, (CopyAction, RenameAction)):
-            if file_type(ticket.action.src) != file_type(ticket.action.dst):
+            if ticket.action.dst.exists and file_type(ticket.action.src) != file_type(ticket.action.dst):
                 logger.errorq()
                 logger.errorq('Conflict: file type changed')
-                logger.errorq('From:', ticket.action.src)
-                logger.errorq('To:  ', ticket.action.dst)
+                logger.errorq(file_type(ticket.action.src), '│', ticket.action.src)
+                logger.errorq(file_type(ticket.action.dst), '│', ticket.action.dst)
     dump()
 
     # Fuse contiguous RenameActions into Rotate RenameAction
@@ -866,6 +874,9 @@ def main():
         except AttributeError:
             return a
 
+    # for key, value in ls_colors().items():
+    #     print(key, repr(value), value('test'))
+    # sys.exit(1)
     prev_call = None
     next_call = (step_vim_edit_inventory, inventory, inventory)
     while next_call:

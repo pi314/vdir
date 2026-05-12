@@ -92,3 +92,19 @@ def fancy_diff_strings(a, b):
         return (diff_oneline, None)
 
     return (diff_compact_A, diff_compact_B)
+
+
+def ls_colors(key=None):
+    def kv(entry):
+        entry = entry.split('=')
+        return entry[0], color('\033[' + entry[1] + 'm')
+
+    eza_colors = os.environ.get('EZA_COLORS', '')
+    ls_colors = os.environ.get('LS_COLORS', '')
+    ret = dict(kv(entry)
+               for entry in (eza_colors + ls_colors).split(':'))
+
+    if key:
+        return ret.get(key, color())
+
+    return ret
