@@ -410,21 +410,29 @@ def step_merge_actions(base, new, ticket_pool):
     # Conflict check
     logger.debug(magenta('---- Conflict check -----'))
     for path, actions in ticket_pool.by_path.items():
-        if len(actions.get('to', [])) > 1:
+        to_list = actions.get('to', [])
+        from_list = actions.get('from', [])
+        nop_list = actions.get('nop', [])
+
+        if len(to_list) > 1:
             logger.errorq('Conflict: multiple copy/move into single destination')
-            for ticket in actions['to']:
+            for ticket in to_list:
                 logger.errorq(f'From: {ticket.action.src}')
             logger.errorq(f'To  : {path}')
 
-        elif actions.get('to', []) and not actions.get('from', []) and path.exists():
-            logger.errorq('Conflict: has risk override existing file')
-            for ticket in actions['to']:
-                logger.errorq(f'From: {ticket.action.src}')
-            logger.errorq(f'To: {path}')
+        elif path.exists() and to_list and not from_list:
+            problems = [ticket
+                        for ticket in to_list
+                        if ticket.action.src.inode != ticket.action.dst.inode]
+            if problems:
+                logger.errorq('Conflict: has risk overwrite existing file')
+                for ticket in problems:
+                    logger.errorq(f'From: {ticket.action.src}')
+                logger.errorq(f'To: {path}')
 
-        elif (len(actions.get('nop', [])) + len(actions.get('to', []))) > 1:
-            logger.errorq('Conflict: override tracking item')
-            for ticket in actions.get('nop', []) + actions.get('to', []):
+        elif (len(nop_list) + len(to_list)) > 1:
+            logger.errorq('Conflict: overwrite tracking item')
+            for ticket in nop_list + to_list:
                 logger.errorq(f'From: {ticket.action.src}')
             logger.errorq(f'To  : {path}')
 
