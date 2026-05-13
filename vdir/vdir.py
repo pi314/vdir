@@ -460,6 +460,16 @@ def step_merge_actions(base, new, ticket_pool):
                     break
     dump()
 
+    # Transform CopyAction(*, .tar) into CompressAction
+    # Transform CopyAction(.tar, *) into UncompressAction
+    logger.debug(magenta('---- Construct CompressAction/UncompressAction ----'))
+    for ticket in ticket_pool.ticket_list:
+        if isinstance(ticket.action, CopyAction) and ticket.action.dst.suffix == '.tar':
+            ticket.action = CompressAction(ticket.action.src, ticket.action.dst)
+        elif isinstance(ticket.action, CopyAction) and ticket.action.src.suffix == '.tar':
+            ticket.action = UncompressAction(ticket.action.src, ticket.action.dst)
+    dump()
+
     # Check src/dst isdir/isfile/isfifo/islink consistency
     logger.debug(magenta('---- Check src/dst type consistency ----'))
     def file_type(f):

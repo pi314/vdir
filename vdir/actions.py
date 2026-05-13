@@ -1,4 +1,5 @@
 import shutil
+import subprocess
 
 from pathlib import Path
 
@@ -211,6 +212,64 @@ class RelinkCommand:
         logger.cmd(['ln', '-s', self.ref, self.lnk], res=self.res)
 
 
+class CompressCommand:
+    def __init__(self, src, dst, keep=True):
+        self.src = src
+        self.dst = dst
+        self.keep = keep
+        self.res = None
+        self.cmd = ['tar', 'cvf', self.dst, self.src]
+        self.p = None
+
+    def __call__(self):
+        try:
+            if self.dst.exists():
+                raise FileExistsError(self.dst)
+
+            mkdir_p(self.dst)
+            self.preview()
+            self.p = iroiro.run(self.cmd, stdin=False, stdout=False, stderr=False)
+
+        except Exception as e:
+            logger.error(e)
+            self.res = False
+            self.preview()
+
+        return self.p.returncode == 0
+
+    def preview(self):
+        logger.cmd(self.cmd, res=self.res)
+
+
+class UncompressCommand:
+    def __init__(self, src, dst, keep=True):
+        self.src = src
+        self.dst = dst
+        self.keep = keep
+        self.res = None
+        self.cmd = ['tar', 'xvf', self.src, self.dst]
+        self.p = None
+
+    def __call__(self):
+        try:
+            if self.dst.exists():
+                raise FileExistsError(self.dst)
+
+            mkdir_p(self.dst)
+            self.preview()
+            self.p = iroiro.run(self.cmd, stdin=False, stdout=False, stderr=False)
+
+        except Exception as e:
+            logger.error(e)
+            self.res = False
+            self.preview()
+
+        return self.p.returncode == 0
+
+    def preview(self):
+        logger.cmd(self.cmd, res=self.res)
+
+
 class VirtualAction:
     def __init__(self, *targets):
         self.targets = targets
@@ -333,8 +392,8 @@ class DeleteAction(FSAction):
 
 class CopyAction(FSAction):
     def preview(self):
-        logger.info(yellow('Copy:') + yellow('[') + self.src.txt + yellow(']'))
-        logger.info(yellow('└───►') + yellow('[') + self.dst.txt + yellow(']'))
+        logger.info(lime('Copy:') + lime('[') + self.src.txt + lime(']'))
+        logger.info(lime('└───►') + lime('[') + self.dst.txt + lime(']'))
 
     def apply(self):
         try:
@@ -438,8 +497,26 @@ class RelinkAction(FSAction):
 
 
 class CompressAction(FSAction):
-    pass
+    def preview(self):
+        logger.info(lime('Compress:') + lime('[') + self.src.txt + lime(']'))
+        logger.info(lime('└───────►') + lime('[') + self.dst.txt + lime(']'))
+
+    def apply(self):
+        try:
+            return CompressCommand(self.src.path, self.dst.path)()
+        except Exception as e:
+            logger.error(e)
+            return False
 
 
 class UncompressAction(FSAction):
-    pass
+    def preview(self):
+        logger.info(lime('Extract:') + lime('[') + self.src.txt + lime(']'))
+        logger.info(lime('└──────►') + lime('[') + self.dst.txt + lime(']'))
+
+    def apply(self):
+        try:
+            return UncompressCommand(self.src.path, self.dst.path)()
+        except Exception as e:
+            logger.error(e)
+            return False

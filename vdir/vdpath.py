@@ -104,6 +104,10 @@ class VDPath:
         return str(self.path.resolve())
 
     @property
+    def suffix(self):
+        return ''.join(self.path.suffixes)
+
+    @property
     def exists(self):
         return self.path.exists() or self.islink
 
