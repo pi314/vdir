@@ -464,10 +464,13 @@ def step_merge_actions(base, new, ticket_pool):
     # Transform CopyAction(.tar, *) into UncompressAction
     logger.debug(magenta('---- Construct CompressAction/UncompressAction ----'))
     for ticket in ticket_pool.ticket_list:
-        if isinstance(ticket.action, CopyAction) and ticket.action.dst.suffix == '.tar':
-            ticket.action = CompressAction(ticket.action.src, ticket.action.dst)
-        elif isinstance(ticket.action, CopyAction) and ticket.action.src.suffix == '.tar':
-            ticket.action = UncompressAction(ticket.action.src, ticket.action.dst)
+        if isinstance(ticket.action, (CopyAction, RenameAction)):
+            if ticket.action.src.suffix == '.tar' and ticket.action.dst.suffix == '.tar':
+                pass
+            elif ticket.action.dst.suffix == '.tar':
+                ticket.action = CompressAction(ticket.action.src, ticket.action.dst, keep=isinstance(ticket.action, CopyAction))
+            elif ticket.action.src.suffix == '.tar':
+                ticket.action = UncompressAction(ticket.action.src, ticket.action.dst, keep=isinstance(ticket.action, CopyAction))
     dump()
 
     # Check src/dst isdir/isfile/isfifo/islink consistency

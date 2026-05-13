@@ -230,6 +230,12 @@ class CompressCommand:
             self.preview()
             self.p = iroiro.run(self.cmd, stdin=False, stdout=False, stderr=False)
 
+            if self.p.returncode != 0:
+                return False
+
+            if not self.keep:
+                return DeleteCommand(self.src)()
+
         except Exception as e:
             logger.error(e)
             self.res = False
@@ -258,6 +264,12 @@ class UncompressCommand:
             mkdir_p(self.dst)
             self.preview()
             self.p = iroiro.run(self.cmd, stdin=False, stdout=False, stderr=False)
+
+            if self.p.returncode != 0:
+                return False
+
+            if not self.keep:
+                return DeleteCommand(self.src)()
 
         except Exception as e:
             logger.error(e)
@@ -497,26 +509,36 @@ class RelinkAction(FSAction):
 
 
 class CompressAction(FSAction):
+    def __init__(self, *targets, keep=True):
+        super().__init__(*targets)
+        self.keep = keep
+
     def preview(self):
-        logger.info(lime('Compress:') + lime('[') + self.src.txt + lime(']'))
-        logger.info(lime('└───────►') + lime('[') + self.dst.txt + lime(']'))
+        color = lime if self.keep else yellow
+        logger.info(color('Compress:') + color('[') + self.src.txt + color(']'))
+        logger.info(color('└───────►') + color('[') + self.dst.txt + color(']'))
 
     def apply(self):
         try:
-            return CompressCommand(self.src.path, self.dst.path)()
+            return CompressCommand(self.src.path, self.dst.path, self.keep)()
         except Exception as e:
             logger.error(e)
             return False
 
 
 class UncompressAction(FSAction):
+    def __init__(self, *targets, keep=True):
+        super().__init__(*targets)
+        self.keep = keep
+
     def preview(self):
-        logger.info(lime('Extract:') + lime('[') + self.src.txt + lime(']'))
-        logger.info(lime('└──────►') + lime('[') + self.dst.txt + lime(']'))
+        color = lime if self.keep else yellow
+        logger.info(color('Extract:') + color('[') + self.src.txt + color(']'))
+        logger.info(color('└──────►') + color('[') + self.dst.txt + color(']'))
 
     def apply(self):
         try:
-            return UncompressCommand(self.src.path, self.dst.path)()
+            return UncompressCommand(self.src.path, self.dst.path, self.keep)()
         except Exception as e:
             logger.error(e)
             return False
