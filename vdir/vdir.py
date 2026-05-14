@@ -679,11 +679,13 @@ def step_expand_inventory(new, action_list, yn):
                 pass
 
             elif item.mark in ('*', '+'):
+                # GlobAction and GlobAllAction take effect here
                 for p in item.path.listdir(item.mark == '*'):
                     if not new.contains(p) and not newnew.contains(p):
                         newnew.append(TrackingItem(None, p))
 
             elif item.mark == '@':
+                # ResolveLinkAction takes effect here
                 if not new.contains(item.path.ref) and not newnew.contains(item.path.ref):
                     newnew.append(TrackingItem(None, item.path.ref))
 

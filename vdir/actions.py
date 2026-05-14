@@ -440,7 +440,7 @@ class RenameAction(FSAction):
         else:
             for idx, target in enumerate(self.targets):
                 logger.info(yellow('Rename:' + ('┌─' if idx == 0 else '└►')) +
-                            yellow('[') + target + yellow(']'))
+                            yellow('[') + target.txt + yellow(']'))
 
     def apply(self):
         try:
