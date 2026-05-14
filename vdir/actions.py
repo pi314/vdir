@@ -103,7 +103,7 @@ class CopyCommand:
             if self.dst.exists():
                 raise FileExistsError(self.dst)
 
-            mkdir_p(self.dst)
+            mkdirs(self.dst.parent)
             self.preview()
             if self.src.is_dir() and not self.src.is_symlink():
                 shutil.copytree(self.src, self.dst,
@@ -137,7 +137,7 @@ class MoveCommand:
 
     def __call__(self):
         try:
-            mkdir_p(self.dst)
+            mkdirs(self.dst.parent)
             self.preview()
             self.src.rename(self.dst)
             rmdir_p(self.src)
@@ -229,7 +229,7 @@ class CompressCommand:
             if self.dst.exists():
                 raise FileExistsError(self.dst)
 
-            mkdir_p(self.dst)
+            mkdirs(self.dst.parent)
             self.preview()
             self.p = iroiro.run(self.cmd, stdin=False, stdout=False, stderr=False)
 
@@ -265,7 +265,7 @@ class UncompressCommand:
             if self.dst.exists():
                 raise FileExistsError(self.dst)
 
-            mkdirs(self.dst)
+            mkdirs(self.dst, quiet=True)
             self.preview()
             self.p = iroiro.run(self.cmd, stdin=False, stdout=False, stderr=False)
 
@@ -357,16 +357,7 @@ class SortInventoryAction(InvAction):
         logger.info(cyan('Sort:') + cyan('[') + self.src.text + cyan(']'))
 
 
-def mkdir_p(path):
-    try:
-        if not path.parent.exists():
-            logger.cmd(['mkdir', '-p', path.parent])
-            path.parent.mkdir(parents=True, exist_ok=True)
-    except:
-        return
-
-
-def mkdirs(path, quiet=True):
+def mkdirs(path, quiet=False):
     try:
         if not path.exists():
             if not quiet:
@@ -486,9 +477,7 @@ class RotateRenameAction(RenameAction):
             mv_list.append((tmpdst, self.targets[0]))
 
             for src, dst in mv_list:
-                if not dst.parent.exists():
-                    logger.cmd(['mkdir', '-p', dst.parent])
-                    dst.parent.mkdir(parents=True, exist_ok=True)
+                mkdirs(dst.parent)
 
                 logger.cmd(['mv', src, dst])
                 src.rename(dst)

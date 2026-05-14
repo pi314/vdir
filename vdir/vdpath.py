@@ -100,8 +100,12 @@ class VDPath:
     @property
     def realpath(self):
         if self.islink:
-            return str(self.path.parent.resolve() / self.path.name)
-        return str(self.path.resolve())
+            return VDPath(self.path.parent.resolve() / self.path.name)
+        return VDPath(self.path.resolve())
+
+    @property
+    def parent(self):
+        return VDPath(self.path.parent)
 
     @property
     def suffix(self):
@@ -132,16 +136,12 @@ class VDPath:
         return self.path.is_symlink()
 
     @property
-    def fullpath(self):
-        return self.path
-
-    @property
     def basename(self):
         return self.path.name
 
     @property
     def dirname(self):
-        return self.path.parent
+        return str(self.path.parent)
 
     @property
     def size(self):
