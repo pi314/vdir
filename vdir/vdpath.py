@@ -194,6 +194,9 @@ class VDPath:
 
         return ret
 
+    def rename(self, dst):
+        self.path.rename(dst.path)
+
 
 class VDLink:
     def __init__(self, lnk, ref=None):

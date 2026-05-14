@@ -21,18 +21,6 @@ def uniq(lst):
     return ret
 
 
-def gen_tmp_file_name(path, postfix='.vdtmp'):
-    import time
-    now = time.time()
-    tmp_file_name = '{orig_path}{postfix}[{getpid}].{timestamp}'.format(
-            orig_path=path.lstrip('/'),
-            postfix=postfix,
-            timestamp=now,
-            getpid=os.getpid(),
-            )
-    return Path(tmp_file_name)
-
-
 def fancy_diff_strings(a, b):
     import collections
     import unicodedata

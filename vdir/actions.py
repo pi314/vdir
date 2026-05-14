@@ -9,6 +9,18 @@ from .vdpath import *
 from .inventory import *
 
 
+def gen_tmp_file_name(path, postfix='.vdtmp'):
+    import time
+    now = time.time()
+    tmp_file_name = '{orig_path}{postfix}.[{timestamp}][{getpid}]'.format(
+            orig_path=path,
+            postfix=postfix,
+            timestamp=now,
+            getpid=os.getpid(),
+            )
+    return VDPath(tmp_file_name)
+
+
 class TicketPool:
     def __init__(self):
         self.by_path = {}
