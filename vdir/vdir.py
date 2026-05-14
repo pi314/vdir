@@ -609,7 +609,7 @@ def step_confirm_action_list(base, new, ticket_pool):
         else:
             logger.debug(repr(action))
 
-    if all(isinstance(action, (TrackAction, UntrackAction)) for action in action_list):
+    if all(isinstance(action, (TrackAction, UntrackAction, GlobAction, GlobAllAction)) for action in action_list):
         yes = True
     else:
         yes = False
