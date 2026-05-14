@@ -423,7 +423,8 @@ def step_merge_actions(base, new, ticket_pool):
         elif path.exists() and to_list and not from_list:
             problems = [ticket
                         for ticket in to_list
-                        if ticket.action.src.inode != ticket.action.dst.inode]
+                        if ticket.action.src.inode != ticket.action.dst.inode
+                        and not ticket_pool[ticket.action.dst].get('delete')]
             if problems:
                 logger.errorq('Conflict: has risk overwrite existing file')
                 for ticket in problems:

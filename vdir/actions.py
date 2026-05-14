@@ -24,6 +24,9 @@ class TicketPool:
     def __iter__(self):
         return iter(self.ticket_list)
 
+    def __getitem__(self, key):
+        return self.by_path.get(self.to_path(key), {})
+
     def to_path(self, arg):
         if isinstance(arg, (VDPath, VDLink)):
             return arg.path
@@ -253,7 +256,8 @@ class UncompressCommand:
         self.dst = dst
         self.keep = keep
         self.res = None
-        self.cmd = ['tar', 'xvf', self.src, self.dst]
+        self.cmd = ['tar', 'xvf', self.src, '-C', self.dst]
+
         self.p = None
 
     def __call__(self):
@@ -261,7 +265,7 @@ class UncompressCommand:
             if self.dst.exists():
                 raise FileExistsError(self.dst)
 
-            mkdir_p(self.dst)
+            mkdirs(self.dst)
             self.preview()
             self.p = iroiro.run(self.cmd, stdin=False, stdout=False, stderr=False)
 
@@ -279,6 +283,7 @@ class UncompressCommand:
         return self.p.returncode == 0
 
     def preview(self):
+        logger.cmd(['mkdir', '-p', self.dst])
         logger.cmd(self.cmd, res=self.res)
 
 
@@ -357,6 +362,16 @@ def mkdir_p(path):
         if not path.parent.exists():
             logger.cmd(['mkdir', '-p', path.parent])
             path.parent.mkdir(parents=True, exist_ok=True)
+    except:
+        return
+
+
+def mkdirs(path, quiet=True):
+    try:
+        if not path.exists():
+            if not quiet:
+                logger.cmd(['mkdir', '-p', path])
+            path.mkdir(parents=True, exist_ok=True)
     except:
         return
 
