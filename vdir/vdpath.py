@@ -194,8 +194,19 @@ class VDPath:
 
         return ret
 
+    def mkdir(self):
+        self.path.mkdir(parents=True, exist_ok=True)
+
+    def unlink(self):
+        self.path.unlink()
+
     def rename(self, dst):
         self.path.rename(dst.path)
+
+    def symlink_to(ref):
+        if isinstance(ref, VDPath):
+            ref = ref.path
+        self.path.symlink_to(ref)
 
 
 class VDLink:
