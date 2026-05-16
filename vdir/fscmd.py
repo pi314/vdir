@@ -25,7 +25,9 @@ def mkdirs(path, quiet=False):
                 logger.cmd(['mkdir', '-p', path.path])
             path.mkdir()
     except:
-        return
+        pass
+
+    return path.exists
 
 
 def rmdir_p(path):
@@ -58,6 +60,37 @@ def rmdir_p(path):
             probe.rmdir()
     except:
         return
+
+
+class MkdirsCommand:
+    def __init__(self, who):
+        self.who = who
+
+    def __call__(self, echo=True):
+        if echo:
+            self.echo()
+        return mkdirs(self.who)
+
+    def echo(self):
+        logger.cmd(['mkdir', '-p', self.who])
+
+
+class ShellCommand:
+    def __init__(self, cmd, **kwargs):
+        self.cmd = cmd
+        self.kwargs = kwargs
+        self.p = iroiro.command(self.cmd, *self.kwargs)
+        self.res = None
+
+    def __call__(self, echo=True):
+        if echo:
+            self.echo()
+        self.p.run()
+        self.res = (self.p.returncode == 0)
+        return self.res
+
+    def echo(self):
+        logger.cmd(self.cmd, res=self.res)
 
 
 class CopyCommand:
@@ -218,10 +251,9 @@ class UncompressCommand:
         self.src = src
         self.dst = dst
         self.keep = keep
-        self.res = None
-        self.cmd = ['tar', 'xvf', self.src.path, '-C', self.dst.path]
-
-        self.p = None
+        self.res = True
+        self.cmd = ShellCommand([
+            'tar', 'xvf', self.src.path, '-C', self.dst.path])
 
     def __call__(self):
         try:
@@ -230,10 +262,9 @@ class UncompressCommand:
 
             mkdirs(self.dst, quiet=True)
             self.echo()
-            self.p = iroiro.run(self.cmd, stdin=False, stdout=False, stderr=False)
-
-            if self.p.returncode != 0:
-                return False
+            self.res = self.res and self.cmd()
+            if not self.res:
+                return self.res
 
             ls = [f for f in self.dst.listdir(True) if f.name != '.DS_Store']
             if len(ls) == 1 and ls[0].name == self.dst.name:
@@ -255,4 +286,4 @@ class UncompressCommand:
 
     def echo(self):
         logger.cmd(['mkdir', '-p', self.dst.path])
-        logger.cmd(self.cmd, res=self.res)
+        self.cmd.echo()

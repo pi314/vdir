@@ -224,7 +224,6 @@ class RotateRenameAction(RenameAction):
                     arrow = '└───'
                 else:
                     arrow = '│ └►'
-
                 logger.info(yellow('Rotate:' + arrow) + yellow('[') + target.txt + yellow(']'))
 
     def apply(self):
@@ -268,7 +267,6 @@ class RelinkAction(FSAction):
     def apply(self):
         try:
             return RelinkCommand(self.src, self.dst)()
-
         except Exception as e:
             logger.error(e)
             return False
