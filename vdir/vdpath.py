@@ -77,6 +77,9 @@ class VDPath:
             return self.path < other.path
         return self.txt < other
 
+    def __truediv__(self, other):
+        return VDPath(join(self.txt, other))
+
     @property
     def text(self):
         if not self.txt:
@@ -140,6 +143,10 @@ class VDPath:
         return self.path.name
 
     @property
+    def name(self):
+        return self.path.name
+
+    @property
     def dirname(self):
         return str(self.path.parent)
 
@@ -185,9 +192,9 @@ class VDPath:
             if child.startswith('.') and not include_hidden:
                 continue
 
-            ret.append(child if not self.txt
-                    else join(self.text, child)
-                    )
+            ret.append(child
+                       if not self.txt
+                       else (self / child))
 
         if not ret:
             ret = ['.'] if not self.txt else [self.text]
