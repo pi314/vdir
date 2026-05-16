@@ -256,12 +256,7 @@ class RotateRenameAction(RenameAction):
             mv_list.append((tmpdst, self.targets[0]))
 
             for src, dst in mv_list:
-                mkdirs(dst.parent)
-
-                logger.cmd(['mv', src.path, dst.path])
-                src.rename(dst)
-
-                rmdir_p(src)
+                MoveCommand(src, dst)()
 
         except Exception as e:
             logger.error(e)
