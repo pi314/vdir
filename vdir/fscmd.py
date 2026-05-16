@@ -60,7 +60,7 @@ class CopyCommand:
                 raise FileExistsError(self.dst)
 
             mkdirs(self.dst.parent)
-            self.preview()
+            self.echo()
             if self.src.isdir:
                 shutil.copytree(self.src.path, self.dst.path,
                                 symlinks=True,
@@ -73,11 +73,11 @@ class CopyCommand:
         except Exception as e:
             logger.error(e)
             self.res = False
-            self.preview()
+            self.echo()
 
         return self.res
 
-    def preview(self):
+    def echo(self):
         if self.src.isdir:
             cmd = ['cp', '-r', self.src.path, self.dst.path]
         else:
@@ -94,7 +94,7 @@ class MoveCommand:
     def __call__(self):
         try:
             mkdirs(self.dst.parent)
-            self.preview()
+            self.echo()
             self.src.rename(self.dst)
             rmdir_p(self.src)
             self.res = True
@@ -102,11 +102,11 @@ class MoveCommand:
         except Exception as e:
             logger.error(e)
             self.res = False
-            self.preview()
+            self.echo()
 
         return self.res
 
-    def preview(self):
+    def echo(self):
         logger.cmd(['mv', self.src.path, self.dst.path], res=self.res)
 
 
@@ -117,7 +117,7 @@ class DeleteCommand:
 
     def __call__(self):
         try:
-            self.preview()
+            self.echo()
             if self.who.isdir:
                 shutil.rmtree(self.who.path)
             else:
@@ -132,11 +132,11 @@ class DeleteCommand:
             else:
                 logger.error(e)
                 self.res = False
-                self.preview()
+                self.echo()
 
         return self.res
 
-    def preview(self):
+    def echo(self):
         if self.who.isdir:
             cmd = ['rm', '-r', self.who.path]
         else:
@@ -152,7 +152,7 @@ class RelinkCommand:
 
     def __call__(self):
         try:
-            self.preview()
+            self.echo()
             if self.lnk.islink:
                 self.lnk.unlink()
             self.lnk.symlink_to(self.ref)
@@ -161,11 +161,11 @@ class RelinkCommand:
         except Exception as e:
             logger.error(e)
             self.res = False
-            self.preview()
+            self.echo()
 
         return self.res
 
-    def preview(self):
+    def echo(self):
         if self.lnk.islink:
             logger.cmd(['rm', self.lnk.path], res=self.res)
         logger.cmd(['ln', '-s', self.ref.path, self.lnk.path], res=self.res)
@@ -186,7 +186,7 @@ class CompressCommand:
                 raise FileExistsError(self.dst.path)
 
             mkdirs(self.dst.parent)
-            self.preview()
+            self.echo()
             self.p = iroiro.run(self.cmd, stdin=False, stdout=False, stderr=False)
 
             if self.p.returncode != 0:
@@ -198,11 +198,11 @@ class CompressCommand:
         except Exception as e:
             logger.error(e)
             self.res = False
-            self.preview()
+            self.echo()
 
         return self.p.returncode == 0
 
-    def preview(self):
+    def echo(self):
         logger.cmd(self.cmd, res=self.res)
 
 
@@ -222,7 +222,7 @@ class UncompressCommand:
                 raise FileExistsError(self.dst.path)
 
             mkdirs(self.dst, quiet=True)
-            self.preview()
+            self.echo()
             self.p = iroiro.run(self.cmd, stdin=False, stdout=False, stderr=False)
 
             if self.p.returncode != 0:
@@ -234,10 +234,10 @@ class UncompressCommand:
         except Exception as e:
             logger.error(e)
             self.res = False
-            self.preview()
+            self.echo()
 
         return self.p.returncode == 0
 
-    def preview(self):
+    def echo(self):
         logger.cmd(['mkdir', '-p', self.dst.path])
         logger.cmd(self.cmd, res=self.res)
