@@ -6,6 +6,18 @@ from .utils import *
 from .vdpath import *
 
 
+def gen_tmp_file_name(path, postfix='.vdtmp'):
+    import time
+    now = time.time()
+    tmp_file_name = '{orig_path}{postfix}.[{timestamp}][{getpid}]'.format(
+            orig_path=path,
+            postfix=postfix,
+            timestamp=now,
+            getpid=os.getpid(),
+            )
+    return VDPath(tmp_file_name)
+
+
 def mkdirs(path, quiet=False):
     try:
         if not path.exists:
@@ -73,7 +85,6 @@ class CopyCommand:
         except Exception as e:
             logger.error(e)
             self.res = False
-            self.echo()
 
         return self.res
 
@@ -102,7 +113,6 @@ class MoveCommand:
         except Exception as e:
             logger.error(e)
             self.res = False
-            self.echo()
 
         return self.res
 
@@ -132,7 +142,6 @@ class DeleteCommand:
             else:
                 logger.error(e)
                 self.res = False
-                self.echo()
 
         return self.res
 
@@ -161,7 +170,6 @@ class RelinkCommand:
         except Exception as e:
             logger.error(e)
             self.res = False
-            self.echo()
 
         return self.res
 
@@ -198,7 +206,6 @@ class CompressCommand:
         except Exception as e:
             logger.error(e)
             self.res = False
-            self.echo()
 
         return self.p.returncode == 0
 
@@ -228,15 +235,23 @@ class UncompressCommand:
             if self.p.returncode != 0:
                 return False
 
+            ls = [f for f in self.dst.listdir(True) if f.name != '.DS_Store']
+            if len(ls) == 1 and ls[0].name == self.dst.name:
+                tmpdir = gen_tmp_file_name(self.dst)
+                MoveCommand(ls[0], tmpdir)()
+                DeleteCommand(self.dst)
+                MoveCommand(tmpdir, self.dst)()
+
             if not self.keep:
                 return DeleteCommand(self.src)()
+
+            self.res = True
 
         except Exception as e:
             logger.error(e)
             self.res = False
-            self.echo()
 
-        return self.p.returncode == 0
+        return self.res
 
     def echo(self):
         logger.cmd(['mkdir', '-p', self.dst.path])
