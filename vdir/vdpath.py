@@ -210,7 +210,7 @@ class VDPath:
     def rename(self, dst):
         self.path.rename(dst.path)
 
-    def symlink_to(ref):
+    def symlink_to(self, ref):
         if isinstance(ref, VDPath):
             ref = ref.path
         self.path.symlink_to(ref)

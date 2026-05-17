@@ -209,14 +209,25 @@ class RelinkCommand:
     def __init__(self, lnk, ref):
         self.lnk = lnk
         self.ref = ref
+        if self.lnk.islink:
+            self.rm_echo = ['rm', self.lnk.path]
+            self.rm = lambda: self.lnk.unlink()
+        else:
+            self.rm_echo = []
+            self.rm = lambda: True
+
+        self.symlink_echo = ['ln', '-s', self.ref.path, self.lnk.path]
+        self.symlink = lambda: self.lnk.symlink_to(self.ref)
+
         self.res = None
 
     def __call__(self):
         try:
             self.echo()
-            if self.lnk.islink:
-                self.lnk.unlink()
-            self.lnk.symlink_to(self.ref)
+            self.rm()
+            logger.debug(self.symlink)
+            self.symlink()
+            logger.debug(self.symlink)
             self.res = True
 
         except Exception as e:
@@ -226,9 +237,8 @@ class RelinkCommand:
         return self.res
 
     def echo(self):
-        if self.lnk.islink:
-            logger.cmd(['rm', self.lnk.path], res=self.res)
-        logger.cmd(['ln', '-s', self.ref.path, self.lnk.path], res=self.res)
+        logger.cmd(self.rm_echo, res=self.res)
+        logger.cmd(self.symlink_echo, res=self.res)
 
 
 class CompressCommand:
@@ -245,11 +255,12 @@ class CompressCommand:
             if self.dst.exists:
                 raise FileExistsError(self.dst.path)
 
-            self.res = MkdirsCommand(self.dst.parent)()
-            if not self.res:
-                return self.res
-
-            self.res = self.res and self.tar_cvf()
+            self.res = all((func() != False
+                            for func in (
+                                MkdirsCommand(self.dst.parent),
+                                self.tar_cvf
+                                )
+                            ))
             if not self.res:
                 return self.res
 
@@ -287,7 +298,7 @@ class UncompressCommand:
                 self.res = all((
                     func()!=False for func in (
                         MoveCommand(ls[0], tmpdir),
-                        DeleteCommand(self.dst),
+                        # DeleteCommand(self.dst),
                         MoveCommand(tmpdir, self.dst))
                     ))
                 if not self.res:
