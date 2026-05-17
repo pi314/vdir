@@ -105,34 +105,39 @@ class CopyCommand:
         self.dst = dst
         self.res = None
 
+        if self.src.isdir:
+            self.cmd_for_echo = ['cp', '-r', self.src.path, self.dst.path]
+            self.copy_cmd = lambda: shutil.copytree(self.src.path, self.dst.path,
+                                                    symlinks=True,
+                                                    copy_function=shutil.copy,
+                                                    ignore_dangling_symlinks=True)
+        else:
+            self.cmd_for_echo = ['cp', self.src.path, self.dst.path]
+            self.copy_cmd = lambda: shutil.copy(self.src.path, self.dst.path, follow_symlinks=False)
+
     def __call__(self):
         try:
             if self.dst.exists:
                 raise FileExistsError(self.dst)
 
-            MkdirsCommand(self.dst.parent)()
+            self.res = MkdirsCommand(self.dst.parent)()
+            if not self.res:
+                return self.res
+
             self.echo()
-            if self.src.isdir:
-                shutil.copytree(self.src.path, self.dst.path,
-                                symlinks=True,
-                                copy_function=shutil.copy,
-                                ignore_dangling_symlinks=True)
-            else:
-                shutil.copy(self.src.path, self.dst.path, follow_symlinks=False)
+            self.copy_cmd()
+
             self.res = True
 
         except Exception as e:
             logger.error(e)
+            raise e
             self.res = False
 
         return self.res
 
     def echo(self):
-        if self.src.isdir:
-            cmd = ['cp', '-r', self.src.path, self.dst.path]
-        else:
-            cmd = ['cp', self.src.path, self.dst.path]
-        logger.cmd(cmd, res=self.res)
+        logger.cmd(self.cmd_for_echo, res=self.res)
 
 
 class MoveCommand:
@@ -240,7 +245,7 @@ class CompressCommand:
             if self.dst.exists:
                 raise FileExistsError(self.dst.path)
 
-            self.res = self.res and MkdirsCommand(self.dst.parent)()
+            self.res = MkdirsCommand(self.dst.parent)()
             if not self.res:
                 return self.res
 
@@ -272,25 +277,24 @@ class UncompressCommand:
             if self.dst.exists:
                 raise FileExistsError(self.dst.path)
 
-            self.res = self.res and self.mkdir()
-            if not self.res:
-                return self.res
-
-            self.res = self.res and self.tar_xvf()
+            self.res = all(func() for func in (self.mkdir, self.tar_xvf))
             if not self.res:
                 return self.res
 
             ls = [f for f in self.dst.listdir(True) if f.name != '.DS_Store']
             if len(ls) == 1 and ls[0].name == self.dst.name:
                 tmpdir = gen_tmp_file_name(self.dst)
-                MoveCommand(ls[0], tmpdir)()
-                DeleteCommand(self.dst)
-                MoveCommand(tmpdir, self.dst)()
+                self.res = all((
+                    func()!=False for func in (
+                        MoveCommand(ls[0], tmpdir),
+                        DeleteCommand(self.dst),
+                        MoveCommand(tmpdir, self.dst))
+                    ))
+                if not self.res:
+                    return self.res
 
             if not self.keep:
-                return DeleteCommand(self.src)()
-
-            self.res = True
+                self.res = DeleteCommand(self.src)()
 
         except Exception as e:
             logger.error(e)
