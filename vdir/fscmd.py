@@ -18,61 +18,67 @@ def gen_tmp_file_name(path, postfix='.vdtmp'):
     return VDPath(tmp_file_name)
 
 
-def mkdirs(path, quiet=False):
-    try:
-        if not path.exists:
-            if not quiet:
-                logger.cmd(['mkdir', '-p', path.path])
-            path.mkdir()
-    except:
-        pass
-
-    return path.exists
-
-
-def rmdir_p(path):
-    if isinstance(path, VDPath):
-        path = path.path
-
-    try:
-        cwd = Path.cwd().resolve()
-        for probe in path.resolve().parents:
-            # Delete .DS_Store if present
-            try:
-                (probe / '.DS_Store').unlink()
-            except:
-                pass
-
-            if probe == cwd:
-                # dont delete cwd
-                return True
-
-            if not probe.is_dir():
-                # something weird happen
-                return
-
-            for child in probe.iterdir():
-                # if probe/ is not empty, return
-                return True
-
-            # probe/ is empty, delete it
-            logger.cmd(['rmdir', probe])
-            probe.rmdir()
-    except:
-        return
-
-
 class MkdirsCommand:
     def __init__(self, who):
         self.who = who
 
     def __call__(self, echo=True):
-        if echo:
-            self.echo()
-        return mkdirs(self.who)
+        try:
+            if not self.who.exists:
+                if echo:
+                    self.echo()
+                self.who.mkdir()
+        except:
+            pass
+
+        return self.who.exists
 
     def echo(self):
         logger.cmd(['mkdir', '-p', self.who])
+
+
+class RmdirsCommand:
+    def __init__(self, who):
+        self.who = who
+
+    def __call__(self, echo=True):
+        who = self.who
+        if isinstance(who, VDPath):
+            who = who.path
+
+        cwd = Path.cwd().resolve()
+        targets = [(who, True)]
+        for probe in who.resolve().parents:
+            targets.append((probe, False))
+
+        for probe, ignore_errors in targets:
+            try:
+                # Delete .DS_Store if present
+                try:
+                    (probe / '.DS_Store').unlink()
+                except:
+                    pass
+
+                if probe == cwd:
+                    # dont delete cwd
+                    return True
+
+                for child in probe.iterdir():
+                    # if probe/ is not empty, return
+                    return True
+
+                # Try to delete it
+                logger.cmd(['rmdir', probe])
+                probe.rmdir()
+
+            except:
+                if ignore_errors:
+                    pass
+                else:
+                    return
+
+    def echo(self):
+        logger.cmd(['rmdir', '-p', self.who])
 
 
 class ShellCommand:
@@ -104,7 +110,7 @@ class CopyCommand:
             if self.dst.exists:
                 raise FileExistsError(self.dst)
 
-            mkdirs(self.dst.parent)
+            MkdirsCommand(self.dst.parent)()
             self.echo()
             if self.src.isdir:
                 shutil.copytree(self.src.path, self.dst.path,
@@ -137,10 +143,18 @@ class MoveCommand:
 
     def __call__(self):
         try:
-            mkdirs(self.dst.parent)
+            src = self.src
+            dst = self.dst
+
+            if src == dst.parent:
+                tmpsrc = gen_tmp_file_name(src)
+                MoveCommand(src, tmpsrc)()
+                src = tmpsrc
+
+            MkdirsCommand(dst.parent)()
             self.echo()
-            self.src.rename(self.dst)
-            rmdir_p(self.src)
+            src.rename(dst)
+            RmdirsCommand(src)()
             self.res = True
 
         except Exception as e:
@@ -165,7 +179,7 @@ class DeleteCommand:
                 shutil.rmtree(self.who.path)
             else:
                 self.who.unlink()
-            rmdir_p(self.who)
+            RmdirsCommand(self.who)()
             self.res = True
 
         except Exception as e:
@@ -218,7 +232,7 @@ class CompressCommand:
         self.dst = dst
         self.keep = keep
         self.res = None
-        self.cmd = ['tar', 'cvf', self.dst.path, self.src.path]
+        self.tar_cvf = ShellCommand(['tar', 'cvf', self.dst.path, self.src.path])
         self.p = None
 
     def __call__(self):
@@ -226,12 +240,13 @@ class CompressCommand:
             if self.dst.exists:
                 raise FileExistsError(self.dst.path)
 
-            mkdirs(self.dst.parent)
-            self.echo()
-            self.p = iroiro.run(self.cmd, stdin=False, stdout=False, stderr=False)
+            self.res = self.res and MkdirsCommand(self.dst.parent)()
+            if not self.res:
+                return self.res
 
-            if self.p.returncode != 0:
-                return False
+            self.res = self.res and self.tar_cvf()
+            if not self.res:
+                return self.res
 
             if not self.keep:
                 return DeleteCommand(self.src)()
@@ -242,27 +257,26 @@ class CompressCommand:
 
         return self.p.returncode == 0
 
-    def echo(self):
-        logger.cmd(self.cmd, res=self.res)
-
 
 class UncompressCommand:
     def __init__(self, src, dst, keep=True):
         self.src = src
         self.dst = dst
         self.keep = keep
-        self.res = True
-        self.cmd = ShellCommand([
-            'tar', 'xvf', self.src.path, '-C', self.dst.path])
+        self.res = None
+        self.mkdir = MkdirsCommand(self.dst)
+        self.tar_xvf = ShellCommand(['tar', 'xvf', self.src.path, '-C', self.dst.path])
 
     def __call__(self):
         try:
             if self.dst.exists:
                 raise FileExistsError(self.dst.path)
 
-            mkdirs(self.dst, quiet=True)
-            self.echo()
-            self.res = self.res and self.cmd()
+            self.res = self.res and self.mkdir()
+            if not self.res:
+                return self.res
+
+            self.res = self.res and self.tar_xvf()
             if not self.res:
                 return self.res
 
@@ -283,7 +297,3 @@ class UncompressCommand:
             self.res = False
 
         return self.res
-
-    def echo(self):
-        logger.cmd(['mkdir', '-p', self.dst.path])
-        self.cmd.echo()
