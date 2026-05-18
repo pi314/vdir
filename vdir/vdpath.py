@@ -111,6 +111,10 @@ class VDPath:
         return VDPath(self.path.parent)
 
     @property
+    def parents(self):
+        return [VDPath(p) for p in self.path.parents]
+
+    @property
     def suffix(self):
         return ''.join(self.path.suffixes)
 

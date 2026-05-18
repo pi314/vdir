@@ -48,7 +48,7 @@ class RmdirsCommand:
 
         cwd = Path.cwd().resolve()
         targets = [(who, True)]
-        for probe in who.resolve().parents:
+        for probe in who.realpath.parents:
             targets.append((probe, False))
 
         for probe, ignore_errors in targets:
@@ -210,24 +210,22 @@ class RelinkCommand:
         self.lnk = lnk
         self.ref = ref
         if self.lnk.islink:
-            self.rm_echo = ['rm', self.lnk.path]
-            self.rm = lambda: self.lnk.unlink()
+            self.rm_cmd = ['rm', self.lnk.path]
+            self.do_rm = lambda: self.lnk.unlink()
         else:
-            self.rm_echo = []
-            self.rm = lambda: True
+            self.rm_cmd = []
+            self.do_rm = lambda: True
 
-        self.symlink_echo = ['ln', '-s', self.ref.path, self.lnk.path]
-        self.symlink = lambda: self.lnk.symlink_to(self.ref)
+        self.symlink_cmd = ['ln', '-s', self.ref.path, self.lnk.path]
+        self.do_symlink = lambda: self.lnk.symlink_to(self.ref)
 
         self.res = None
 
     def __call__(self):
         try:
             self.echo()
-            self.rm()
-            logger.debug(self.symlink)
-            self.symlink()
-            logger.debug(self.symlink)
+            self.do_rm()
+            self.do_symlink()
             self.res = True
 
         except Exception as e:
@@ -237,8 +235,8 @@ class RelinkCommand:
         return self.res
 
     def echo(self):
-        logger.cmd(self.rm_echo, res=self.res)
-        logger.cmd(self.symlink_echo, res=self.res)
+        logger.cmd(self.rm_cmd, res=self.res)
+        logger.cmd(self.symlink_cmd, res=self.res)
 
 
 class CompressCommand:
