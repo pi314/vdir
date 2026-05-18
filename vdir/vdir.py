@@ -463,7 +463,7 @@ def step_merge_actions(base, new, ticket_pool):
 
     # Transform CopyAction(*, .tar) into CompressAction
     # Transform CopyAction(.tar, *) into UncompressAction
-    suffix_set = {'.tar', '.zip'}
+    suffix_set = {'.tar', '.zip', '.tar.xz', '.tar.gz', '.xz'}
     logger.debug(magenta('---- Construct CompressAction/UncompressAction ----'))
     for ticket in ticket_pool.ticket_list:
         if isinstance(ticket.action, (CopyAction, RenameAction)):
@@ -472,11 +472,11 @@ def step_merge_actions(base, new, ticket_pool):
             dst = ticket.action.dst
             src_suffix = src.suffix
             dst_suffix = dst.suffix
-            if src_suffix in suffix_set and dst_suffix in suffix_set:
+            if src_suffix in suffix_set | {'.rar'} and dst_suffix in suffix_set:
                 pass
             elif dst_suffix in suffix_set:
                 ticket.action = CompressAction(src, dst, keep=is_copy)
-            elif src_suffix in suffix_set:
+            elif src_suffix in suffix_set | {'.rar'}:
                 ticket.action = UncompressAction(src, dst, keep=is_copy)
     dump()
 
