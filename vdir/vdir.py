@@ -649,6 +649,7 @@ def step_apply_change_list(base, new, action_list, yn):
             continue
 
         if hasattr(action, 'apply'):
+            logger.debug(action)
             ret = action.apply()
             if ret is False:
                 logger.error('Action failed')

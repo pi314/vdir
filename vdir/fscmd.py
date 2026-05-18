@@ -45,10 +45,12 @@ class RmdirsCommand:
         who = self.who
         if isinstance(who, VDPath):
             who = who.path
+        if isinstance(who, VDLink):
+            who = who.lnk.path
 
         cwd = Path.cwd().resolve()
         targets = [(who, True)]
-        for probe in who.realpath.parents:
+        for probe in who.resolve().parents:
             targets.append((probe, False))
 
         for probe, ignore_errors in targets:
@@ -106,14 +108,14 @@ class CopyCommand:
         self.res = None
 
         if self.src.isdir:
-            self.cmd_for_echo = ['cp', '-r', self.src.path, self.dst.path]
-            self.copy_cmd = lambda: shutil.copytree(self.src.path, self.dst.path,
+            self.cp_cmd = ['cp', '-r', self.src.path, self.dst.path]
+            self.do_copy = lambda: shutil.copytree(self.src.path, self.dst.path,
                                                     symlinks=True,
                                                     copy_function=shutil.copy,
                                                     ignore_dangling_symlinks=True)
         else:
-            self.cmd_for_echo = ['cp', self.src.path, self.dst.path]
-            self.copy_cmd = lambda: shutil.copy(self.src.path, self.dst.path, follow_symlinks=False)
+            self.cp_cmd = ['cp', self.src.path, self.dst.path]
+            self.do_copy = lambda: shutil.copy(self.src.path, self.dst.path, follow_symlinks=False)
 
     def __call__(self):
         try:
@@ -125,7 +127,7 @@ class CopyCommand:
                 return self.res
 
             self.echo()
-            self.copy_cmd()
+            self.do_copy()
 
             self.res = True
 
@@ -137,7 +139,7 @@ class CopyCommand:
         return self.res
 
     def echo(self):
-        logger.cmd(self.cmd_for_echo, res=self.res)
+        logger.cmd(self.cp_cmd, res=self.res)
 
 
 class MoveCommand:
@@ -176,14 +178,17 @@ class DeleteCommand:
     def __init__(self, who):
         self.who = who
         self.res = None
+        if self.who.isdir:
+            self.rm_cmd = ['rm', '-r', self.who.path]
+            self.do_rm = lambda: shutil.rmtree(self.who.path)
+        else:
+            self.rm_cmd = ['rm', self.who.path]
+            self.do_rm = lambda: self.who.unlink()
 
     def __call__(self):
         try:
             self.echo()
-            if self.who.isdir:
-                shutil.rmtree(self.who.path)
-            else:
-                self.who.unlink()
+            self.do_rm()
             RmdirsCommand(self.who)()
             self.res = True
 
@@ -198,11 +203,7 @@ class DeleteCommand:
         return self.res
 
     def echo(self):
-        if self.who.isdir:
-            cmd = ['rm', '-r', self.who.path]
-        else:
-            cmd = ['rm', self.who.path]
-        logger.cmd(cmd, res=self.res)
+        logger.cmd(self.rm_cmd, res=self.res)
 
 
 class RelinkCommand:
