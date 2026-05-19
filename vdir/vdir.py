@@ -463,27 +463,24 @@ def step_merge_actions(base, new, ticket_pool):
 
     # Transform CopyAction(*, .tar) into CompressAction
     # Transform CopyAction(.tar, *) into UncompressAction
-    suffix_set = {
-            '.tar',
-            '.tar.xz', '.xz',
-            '.tar.bz', '.tar.bz2', '.tbz', '.tbz2', '.bz', '.bz2',
-            '.tar.gz', '.gz', '.tgz',
-            '.tar.Z', '.Z',
-            '.zip', '.7z',
-            }
+    suffix_list = ('.tar',
+                   '.tar.xz', '.xz',
+                   '.tar.bz', '.tar.bz2', '.tbz', '.tbz2', '.bz', '.bz2',
+                   '.tar.gz', '.gz', '.tgz',
+                   '.tar.Z', '.Z',
+                   '.zip', '.7z',
+                   )
     logger.debug(magenta('---- Construct CompressAction/UncompressAction ----'))
     for ticket in ticket_pool.ticket_list:
         if isinstance(ticket.action, (CopyAction, RenameAction)):
             is_copy = isinstance(ticket.action, CopyAction)
             src = ticket.action.src
             dst = ticket.action.dst
-            src_suffix = src.suffix
-            dst_suffix = dst.suffix
-            if src_suffix in suffix_set | {'.rar'} and dst_suffix in suffix_set:
+            if src.name.endswith(suffix_list + ('.rar',)) and dst.name.endswith(suffix_list):
                 pass
-            elif dst_suffix in suffix_set:
+            elif dst.name.endswith(suffix_list):
                 ticket.action = CompressAction(src, dst, keep=is_copy)
-            elif src_suffix in suffix_set | {'.rar'}:
+            elif src.name.endswith(suffix_list + ('.rar',)):
                 ticket.action = UncompressAction(src, dst, keep=is_copy)
     dump()
 

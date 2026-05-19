@@ -249,24 +249,23 @@ class CompressCommand:
 
         util = 'tar'
         flags = ['-c', '-v', '-f']
-        dst_suffix = self.dst.suffix
-        if dst_suffix in ('.tar.xz', '.xz'):
+        if dst.name.endswith('.tar.xz', '.xz'):
             flags.insert(0, '--xz')
 
-        elif dst_suffix in ('.tar.bz', '.tar.bz2', '.tbz', '.tbz2'):
+        elif dst.name.endswith('.tar.bz', '.tar.bz2', '.tbz', '.tbz2'):
             flags.insert(0, '--bzip2')
 
-        elif dst_suffix in ('.tar.gz', '.gz', '.tgz'):
+        elif dst.name.endswith('.tar.gz', '.gz', '.tgz'):
             flags.insert(0, '--gzip')
 
-        elif dst_suffix in ('.tar.Z', '.Z'):
+        elif dst.name.endswith('.tar.Z', '.Z'):
             flags.insert(0, '--compress')
 
-        elif dst_suffix == '.zip':
+        elif dst.name.endswith('.zip'):
             util = 'zip'
             flags = ['--symlinks', '-r']
 
-        elif dst_suffix == '.7z':
+        elif dst.name.endswith('.7z'):
             util = '7z'
             flags = ['a']
 
