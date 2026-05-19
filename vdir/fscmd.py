@@ -246,8 +246,31 @@ class CompressCommand:
         self.dst = dst
         self.keep = keep
         self.res = None
-        self.tar_cvf = ShellCommand(['tar', 'cvf', self.dst.path, self.src.path])
-        self.p = None
+
+        util = 'tar'
+        flags = ['-c', '-v', '-f']
+        dst_suffix = self.dst.suffix
+        if dst_suffix in ('.tar.xz', '.xz'):
+            flags.insert(0, '--xz')
+
+        elif dst_suffix in ('.tar.bz', '.tar.bz2', '.tbz', '.tbz2'):
+            flags.insert(0, '--bzip2')
+
+        elif dst_suffix in ('.tar.gz', '.gz', '.tgz'):
+            flags.insert(0, '--gzip')
+
+        elif dst_suffix in ('.tar.Z', '.Z'):
+            flags.insert(0, '--compress')
+
+        elif dst_suffix == '.zip':
+            util = 'zip'
+            flags = ['--symlinks', '-r']
+
+        elif dst_suffix == '.7z':
+            util = '7z'
+            flags = ['a']
+
+        self.tar_cvf = ShellCommand([util] + flags + [self.dst.path, self.src.path])
 
     def __call__(self):
         try:
@@ -270,7 +293,7 @@ class CompressCommand:
             logger.error(e)
             self.res = False
 
-        return self.p.returncode == 0
+        return self.res
 
 
 class UncompressCommand:
@@ -280,7 +303,7 @@ class UncompressCommand:
         self.keep = keep
         self.res = None
         self.mkdir = MkdirsCommand(self.dst)
-        self.tar_xvf = ShellCommand(['tar', 'xvf', self.src.path, '-C', self.dst.path])
+        self.tar_xvf = ShellCommand(['tar', 'xvf', self.src.path, '--cd', self.dst.path])
 
     def __call__(self):
         try:
