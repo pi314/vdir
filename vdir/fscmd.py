@@ -9,7 +9,7 @@ from .vdpath import *
 def gen_tmp_file_name(path, postfix='.vdtmp'):
     import time
     now = time.time()
-    tmp_file_name = '{orig_path}{postfix}.[{timestamp}][{getpid}]'.format(
+    tmp_file_name = '{orig_path}{postfix}[{timestamp}][{getpid}]'.format(
             orig_path=path,
             postfix=postfix,
             timestamp=now,
@@ -249,16 +249,16 @@ class CompressCommand:
 
         util = 'tar'
         flags = ['-c', '-v', '-f']
-        if dst.name.endswith('.tar.xz', '.xz'):
+        if dst.name.endswith(('.tar.xz', '.xz')):
             flags.insert(0, '--xz')
 
-        elif dst.name.endswith('.tar.bz', '.tar.bz2', '.tbz', '.tbz2'):
+        elif dst.name.endswith(('.tar.bz', '.tar.bz2', '.tbz', '.tbz2')):
             flags.insert(0, '--bzip2')
 
-        elif dst.name.endswith('.tar.gz', '.gz', '.tgz'):
+        elif dst.name.endswith(('.tar.gz', '.gz', '.tgz')):
             flags.insert(0, '--gzip')
 
-        elif dst.name.endswith('.tar.Z', '.Z'):
+        elif dst.name.endswith(('.tar.Z', '.Z')):
             flags.insert(0, '--compress')
 
         elif dst.name.endswith('.zip'):
