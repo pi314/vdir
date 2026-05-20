@@ -476,11 +476,11 @@ def step_merge_actions(base, new, ticket_pool):
             is_copy = isinstance(ticket.action, CopyAction)
             src = ticket.action.src
             dst = ticket.action.dst
-            if src.name.endswith(suffix_list + ('.rar',)) and dst.name.endswith(suffix_list):
+            if src.name.endswith(suffix_list) and dst.name.endswith(suffix_list):
                 pass
             elif dst.name.endswith(suffix_list):
                 ticket.action = CompressAction(src, dst, keep=is_copy)
-            elif src.name.endswith(suffix_list + ('.rar',)):
+            elif src.name.endswith(suffix_list):
                 ticket.action = UncompressAction(src, dst, keep=is_copy)
     dump()
 
